@@ -68,6 +68,8 @@ inline void NeuralNetwork::forward() {
 }
 
 inline void NeuralNetwork::query(const std::vector<std::pair<int, std::vector<float>*> >& vec_input_query) {
+	int count_query = 0;
+	int count_right_query = 0;
 	for (auto it = vec_input_query.begin(); it != vec_input_query.end(); it++) {
 		const std::vector<float>& v = *(*it).second;
 		int target = (*it).first;
@@ -76,10 +78,21 @@ inline void NeuralNetwork::query(const std::vector<std::pair<int, std::vector<fl
 			input(i, 0) = v[i];
 
 		forward();
-		std::cout << "test:\t" << target << std::endl;
-		printMatrix(out);
+		std::cout << "Number:\t(" << target << ")";
+		float max_koeff = out(0, 0);
+		int num = 0;
+		for(int i = 1; i < out.rows(); i++) {
+			if (max_koeff < out(i, 0)) {
+				max_koeff = out(i, 0);
+				num = i;
+			}
+		}
+		std::cout << " - " << max_koeff << " " << num << std::endl;
+		count_query++;
+		if(num == target)
+			count_right_query++;
 	}
-
+	std::cout << "\n middle value right = " << (float)count_right_query / (float)count_query * 100.0 << std::endl;
 }
 
 void NeuralNetwork::train(const std::vector<std::pair<int, std::vector<float>*> >& vec_input)
@@ -137,6 +150,11 @@ void loadSet(std::string name, std::vector<std::pair<int, std::vector<float>*>>&
 	buffer << file.rdbuf();
 	file.close();
 	int first_sign;
+
+	// 78 sec with find method
+	// 62 sec second method getline
+	// 25 sec third method convertStrToArr
+	// 
 	//std::string::size_type prev_pos, pos;
 	//long mark, dmark;
 	long markStart = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -184,16 +202,13 @@ void loadSet(std::string name, std::vector<std::pair<int, std::vector<float>*>>&
 		vec.push_back({ first_sign, v });
 
 	}
-	// 78 sec with find method
-	// 62 sec second method getline
-	// 25 sec third method convertStrToArr
 	std::cout << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() - markStart << "sec. - time loading" << std::endl;
 }
 
 int main()
 {
-	std::string name1 = "H:\\projects\\neuralnetwork\\mnist_train_100.csv";
-	std::string name2 = "H:\\projects\\neuralnetwork\\mnist_test_10.csv";
+	std::string name1 = "H:\\projects\\neuralnetwork\\mnist_train.csv";
+	std::string name2 = "H:\\projects\\neuralnetwork\\mnist_test.csv";
 	std::vector<std::pair<int, std::vector<float>*>> vec_train;
 	std::vector<std::pair<int, std::vector<float>*>> vec_query;
 	loadSet(name1, vec_train);
